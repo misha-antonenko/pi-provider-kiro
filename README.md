@@ -1,6 +1,8 @@
-# pi-provider-kiro
+# @mshntnnk/pi-provider-kiro
 
 A [pi](https://shittycodingagent.ai/) provider extension that connects pi to the **Kiro API** (AWS CodeWhisperer/Q), exposing **12 kiro-cli-verified models** through one provider surface.
+
+Fork of [`pi-provider-kiro`](https://github.com/mikeyobrien/pi-provider-kiro) adding an opt-in backend-prompt neutralization flag (`pi-provider-kiro.neutralizeBackendPrompt`).
 
 ## Why this exists
 
@@ -16,13 +18,13 @@ Kiro gives you a strong free model menu, but pi needs a provider that speaks Kir
 Install the provider:
 
 ```bash
-pi install npm:pi-provider-kiro
+pi install npm:@mshntnnk/pi-provider-kiro
 ```
 
 Or install it globally with npm:
 
 ```bash
-npm install -g pi-provider-kiro
+npm install -g @mshntnnk/pi-provider-kiro
 ```
 
 Then log in from pi:
@@ -111,6 +113,20 @@ Opt in to a compact allowance indicator in Pi's footer while a Kiro model is act
 
 The badge shows the percent of your allowance **used** (e.g. `◆ Kiro 1%`), colored by consumption — comfortable below 70%, warning at 70%, and critical at 90%. It refreshes on session start, model switches, and after completed Kiro turns, throttled to avoid extra requests. It stays hidden for non-Kiro models, when no local Kiro credential is available, or if a usage lookup fails, and is disabled by default.
 
+### Neutralizing the backend persona
+
+Kiro's API force-injects a persona ("You are Kiro") into the system prompt with no opt-out. Enable this flag to prepend a short preamble ahead of Pi's own system prompt instructing the model to disregard that spilled identity:
+
+```json
+{
+  "pi-provider-kiro": {
+    "neutralizeBackendPrompt": true
+  }
+}
+```
+
+Disabled by default; only the exact value `true` enables it, and malformed settings fail closed.
+
 ## Retry Behavior
 
 Generic transient retries such as HTTP `429` and `5xx` are handled by `pi-coding-agent` at the session layer.
@@ -131,7 +147,7 @@ import {
   isCapacityError,
   isNonRetryableBodyError,
   isTooBigError,
-} from "pi-provider-kiro";
+} from "@mshntnnk/pi-provider-kiro";
 
 isTooBigError(400, body); // size rejection → safe to compact and retry
 isCapacityError(body); // transient capacity → safe to retry as-is
