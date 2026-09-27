@@ -4,6 +4,7 @@
 
 import type { Api, Model, OAuthCredentials, RefreshModelsContext } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { loadNeutralizeBackendPrompt } from "./backend-prompt.js";
 import { formatSafeError } from "./debug.js";
 import { getKiroEndpoints, resolveApiRegion } from "./endpoints.js";
 import { loadKiroFooterConfig } from "./footer.js";
@@ -19,6 +20,7 @@ import { createKiroStream } from "./stream.js";
 import { fetchKiroUsage } from "./usage.js";
 import { loadKiroUsageTracking } from "./usage-tracking.js";
 
+export { KIRO_PERSONA_OVERRIDE, loadNeutralizeBackendPrompt } from "./backend-prompt.js";
 export { resolveApiRegion } from "./endpoints.js";
 export type { KiroProviderAttempts } from "./errors.js";
 export { KiroApiError } from "./errors.js";
@@ -185,7 +187,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   const credential = resolveLocalCredential();
-  const streamSimple = createKiroStream(loadKiroUsageTracking());
+  const streamSimple = createKiroStream(loadKiroUsageTracking(), loadNeutralizeBackendPrompt());
   pi.registerProvider("kiro", {
     baseUrl: getKiroEndpoints("us-east-1").runtime,
     api: "kiro-api",

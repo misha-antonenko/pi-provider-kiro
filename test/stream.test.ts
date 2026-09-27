@@ -1562,6 +1562,43 @@ describe("Feature 9: Streaming Integration", () => {
     vi.unstubAllGlobals();
   });
 
+  it("omits the backend-prompt override when neutralization is off", async () => {
+    const mockFetch = mockFetchOk('{"content":"Hi"}{"contextUsagePercentage":1}');
+    vi.stubGlobal("fetch", mockFetch);
+
+    await collect(streamKiro(makeModel(), makeContext(), { apiKey: "tok" }));
+
+    const content = JSON.parse(mockFetch.mock.calls[0][1].body).conversationState.currentMessage.userInputMessage
+      .content as string;
+    expect(content).not.toContain('You are not "Kiro"');
+    expect(content).toContain("You are helpful");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("prepends the backend-prompt override ahead of pi's system prompt when neutralization is on", async () => {
+    const mockFetch = mockFetchOk('{"content":"Hi"}{"contextUsagePercentage":1}');
+    vi.stubGlobal("fetch", mockFetch);
+
+    const stream = createKiroStream(
+      {
+        estimateDollarValue: false,
+        usdPerCredit: 0,
+        estimateCacheUsage: false,
+        estimatedCacheTimeout: 300_000,
+      } satisfies KiroUsageTracking,
+      true,
+    );
+    await collect(stream(makeModel(), makeContext(), { apiKey: "tok" }));
+
+    const content = JSON.parse(mockFetch.mock.calls[0][1].body).conversationState.currentMessage.userInputMessage
+      .content as string;
+    expect(content).toContain('You are not "Kiro"');
+    expect(content.indexOf('You are not "Kiro"')).toBeLessThan(content.indexOf("You are helpful"));
+
+    vi.unstubAllGlobals();
+  });
+
   // =========================================================================
   // Placeholder tools when context.tools is empty/undefined (advisor path)
   // —————————————————————————————————————————————————————————————————————————

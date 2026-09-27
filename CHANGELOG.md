@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-09-27
+
+### Added
+
+- Opt-in backend-prompt neutralization. Set `pi-provider-kiro.neutralizeBackendPrompt` to `true` to prepend a short preamble ahead of Pi's own system prompt instructing the model to disregard the "You are Kiro" persona that Kiro's API force-injects with no opt-out. Disabled by default; only the exact value `true` enables it, and malformed settings fail closed.
+
 ## [0.12.1] - 2026-09-24
 
 ### Fixed

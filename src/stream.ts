@@ -23,6 +23,7 @@ import type {
 import * as PiAi from "@earendil-works/pi-ai";
 import { UniversalEventStreamMarshaller } from "@smithy/core/event-streams";
 import type { Message } from "@smithy/types";
+import { KIRO_PERSONA_OVERRIDE } from "./backend-prompt.js";
 import { parseBracketToolCalls } from "./bracket-tool-parser.js";
 import { applyCacheEstimate } from "./cache-estimator.js";
 import { debugEnabled, debugLog, formatSafeError, redactSensitiveText } from "./debug.js";
@@ -415,13 +416,17 @@ function transcriptContentText(content: string | TextContent[]): string {
  * Kiro carries the system prompt outside history, so system messages are collapsed
  * and removed from the conversation passed to its user/assistant transformer.
  */
-function resolveProviderContext(context: ProviderContext): {
+function resolveProviderContext(
+  context: ProviderContext,
+  neutralizeBackendPrompt: boolean,
+): {
   messages: PiMessage[];
   systemPrompt: string;
   tools: Tool[];
 } {
   const legacy = context as Context;
-  const promptParts = legacy.systemPrompt ? [legacy.systemPrompt] : [];
+  const promptParts = neutralizeBackendPrompt ? [KIRO_PERSONA_OVERRIDE] : [];
+  if (legacy.systemPrompt) promptParts.push(legacy.systemPrompt);
   const sections = new Map<string, string>();
   const tools = new Map((legacy.tools ?? []).map((tool) => [tool.name, tool]));
   const messages: PiMessage[] = [];
@@ -469,8 +474,10 @@ export function streamKiro(
 
 export function createKiroStream(
   usageTracking: KiroUsageTracking,
+  neutralizeBackendPrompt = false,
 ): (model: Model<Api>, context: ProviderContext, options?: SimpleStreamOptions) => AssistantMessageEventStream {
-  return (model, context, options) => streamKiroWithUsageTracking(usageTracking, model, context, options);
+  return (model, context, options) =>
+    streamKiroWithUsageTracking(usageTracking, model, context, options, neutralizeBackendPrompt);
 }
 
 function streamKiroWithUsageTracking(
@@ -478,12 +485,13 @@ function streamKiroWithUsageTracking(
   model: Model<Api>,
   context: ProviderContext,
   options?: SimpleStreamOptions,
+  neutralizeBackendPrompt = false,
 ): AssistantMessageEventStream {
   const {
     messages: contextMessages,
     tools: currentTools,
     systemPrompt: currentSystemPrompt,
-  } = resolveProviderContext(context);
+  } = resolveProviderContext(context, neutralizeBackendPrompt);
 
   // pi-ai's barrel re-exports the class as type-only before the runtime class re-export, so
   // a named import of AssistantMessageEventStream resolves to a type. Read it from the
