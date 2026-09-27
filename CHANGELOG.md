@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-09-27
+
+Republish of 0.14.0, which stuck in npm's staging pipeline and never promoted to `latest`. No code changes from 0.14.0.
+
 ## [0.14.0] - 2026-09-27
 
 ### Fixed
