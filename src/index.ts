@@ -6,7 +6,7 @@ import type { Api, Model, OAuthCredentials, RefreshModelsContext } from "@earend
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { loadNeutralizeBackendPrompt } from "./backend-prompt.js";
 import { formatSafeError } from "./debug.js";
-import { getKiroEndpoints, resolveApiRegion } from "./endpoints.js";
+import { API_KEY_REGION, getKiroEndpoints, resolveApiRegion } from "./endpoints.js";
 import { loadKiroFooterConfig } from "./footer.js";
 import { registerKiroUsageFooter } from "./footer-lifecycle.js";
 import { getKiroCliCredentials, getKiroCliSocialToken } from "./kiro-cli.js";
@@ -15,7 +15,7 @@ import { setExtensionContext } from "./login-ui.js";
 import { getCachedModels, isCacheStale, type KiroModel, kiroModels, updateKiroModelsCache } from "./models.js";
 import type { KiroCredentials } from "./oauth.js";
 import { loginKiro, refreshKiroToken } from "./oauth.js";
-import { getPiHostKiroCredentials } from "./pi-auth-store.js";
+import { getPiHostKiroApiKey, getPiHostKiroCredentials } from "./pi-auth-store.js";
 import { createKiroStream } from "./stream.js";
 import { fetchKiroUsage } from "./usage.js";
 import { loadKiroUsageTracking } from "./usage-tracking.js";
@@ -88,18 +88,38 @@ function resolveLocalCredential(): KiroRefreshCredential {
 }
 
 /**
- * Resolve local credentials in OAuth form for footer usage lookups. Usage limits
- * require an access token + region + profile ARN, so a bare API-key credential
- * (which has no profile ARN to query) yields undefined and the footer stays hidden.
+ * Resolve local credentials in OAuth form for footer usage lookups.
  *
  * Prefers pi's own persisted credential (~/.pi/agent/auth.json) since that is the
  * one pi hands the provider at runtime; a kiro-cli/IDE credential may not exist.
+ * An API key resolves its own profile via GetProfile (see management.ts), so it
+ * drives usage lookups too even though it carries no OAuth `access` token — it is
+ * mapped into that shape against the key-issuing region.
  */
-function resolveOAuthCredential(): OAuthCredentials | undefined {
+export function resolveOAuthCredential(): OAuthCredentials | undefined {
   const hostCredential = getPiHostKiroCredentials();
   if (hostCredential) return hostCredential as OAuthCredentials;
+
+  const apiKey = getPiHostKiroApiKey() ?? apiKeyFromLocalCredential(resolveLocalCredential());
+  if (apiKey) return apiKeyUsageCredential(apiKey);
+
   const credential = resolveLocalCredential();
   return credential && "access" in credential ? (credential as OAuthCredentials) : undefined;
+}
+
+/**
+ * An API key carries no refresh token or expiry, but `fetchKiroUsage` reads only
+ * `access` and `region`; the remaining OAuthCredentials fields are inert here.
+ */
+function apiKeyUsageCredential(apiKey: string): OAuthCredentials {
+  return { access: apiKey, refresh: "", expires: 0, region: API_KEY_REGION };
+}
+
+function apiKeyFromLocalCredential(credential: KiroRefreshCredential): string | undefined {
+  if (credential && "type" in credential && credential.type === "api_key" && "key" in credential) {
+    return typeof credential.key === "string" ? credential.key : undefined;
+  }
+  return undefined;
 }
 
 function credentialRegion(credential: KiroRefreshCredential): string {

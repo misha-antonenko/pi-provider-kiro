@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { getPiHostKiroCredentials } from "../src/pi-auth-store.js";
+import { getPiHostKiroApiKey, getPiHostKiroCredentials } from "../src/pi-auth-store.js";
 
 describe("getPiHostKiroCredentials", () => {
   let agentDir: string;
@@ -58,5 +58,48 @@ describe("getPiHostKiroCredentials", () => {
   it("fails closed on unparseable auth json", () => {
     writeFileSync(join(agentDir, "auth.json"), "{ not json");
     expect(getPiHostKiroCredentials(agentDir)).toBeUndefined();
+  });
+});
+
+describe("getPiHostKiroApiKey", () => {
+  let agentDir: string;
+
+  beforeEach(() => {
+    agentDir = mkdtempSync(join(tmpdir(), "kiro-pi-auth-"));
+  });
+
+  afterEach(() => {
+    rmSync(agentDir, { recursive: true, force: true });
+  });
+
+  function writeAuth(auth: unknown): void {
+    writeFileSync(join(agentDir, "auth.json"), JSON.stringify(auth));
+  }
+
+  it("reads a persisted api-key entry", () => {
+    writeAuth({ kiro: { type: "api_key", key: "ksk_abc" } });
+    expect(getPiHostKiroApiKey(agentDir)).toBe("ksk_abc");
+  });
+
+  it("returns undefined for an oauth entry", () => {
+    writeAuth({ kiro: { access: "tok", refresh: "r", expires: Date.now() } });
+    expect(getPiHostKiroApiKey(agentDir)).toBeUndefined();
+  });
+
+  it("returns undefined when the key is missing or empty", () => {
+    writeAuth({ kiro: { type: "api_key", key: "" } });
+    expect(getPiHostKiroApiKey(agentDir)).toBeUndefined();
+    writeAuth({ kiro: { type: "api_key" } });
+    expect(getPiHostKiroApiKey(agentDir)).toBeUndefined();
+  });
+
+  it("returns undefined when there is no kiro entry", () => {
+    writeAuth({ openai: { type: "api_key", key: "x" } });
+    expect(getPiHostKiroApiKey(agentDir)).toBeUndefined();
+  });
+
+  it("fails closed on unparseable auth json", () => {
+    writeFileSync(join(agentDir, "auth.json"), "{ not json");
+    expect(getPiHostKiroApiKey(agentDir)).toBeUndefined();
   });
 });

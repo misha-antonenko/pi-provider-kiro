@@ -34,6 +34,26 @@ export function getPiHostKiroCredentials(agentDir = getPiAgentDir()): KiroCreden
   return kiro as unknown as KiroCredentials;
 }
 
+/**
+ * Read pi's own persisted Kiro API key. pi stores a `ksk_` key as an
+ * `{ type: "api_key", key }` entry rather than an OAuth credential, so the
+ * OAuth reader above skips it; this returns the raw key for usage lookups.
+ * Returns undefined when the file is missing, unparseable, or the kiro entry is
+ * not an API key.
+ */
+export function getPiHostKiroApiKey(agentDir = getPiAgentDir()): string | undefined {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(join(agentDir, "auth.json"), "utf-8"));
+  } catch {
+    return undefined;
+  }
+
+  const kiro = asRecord(asRecord(raw)?.kiro);
+  if (!kiro || kiro.type !== "api_key" || typeof kiro.key !== "string" || !kiro.key) return undefined;
+  return kiro.key;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 }
