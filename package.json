@@ -1,6 +1,6 @@
 {
   "name": "@mshntnnk/pi-provider-kiro",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "pi extension for the Kiro API (AWS CodeWhisperer/Q) — 12 kiro-cli-verified models with OAuth authentication. Fork of pi-provider-kiro with an opt-in backend-prompt neutralization flag.",
   "type": "module",
   "main": "./dist/index.js",

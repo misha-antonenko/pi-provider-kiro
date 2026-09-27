@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-09-27
+
+### Fixed
+
+- Show the opt-in usage footer for API-key credentials. `resolveOAuthCredential` only accepted OAuth-shaped credentials, so a user authenticated with a `ksk_` API key saw no badge despite `showUsageInFooter` being set: pi persists an API key as `{ type: "api_key", key }` in `auth.json` (no `access` field), and the `KIRO_API_KEY` environment credential was discarded by the same gate. An API key resolves its own profile via `GetProfile`, so `fetchKiroUsage` already works with one; the footer now reads the persisted key and maps both it and the environment key into the credential shape the lookup needs, against the shared `API_KEY_REGION`.
+
+### Changed
+
+- Move the `us-east-1` API-key control-plane region into the `endpoints` module as `API_KEY_REGION`, so the login flow and the management client share one source of truth instead of duplicating the literal.
+
 ## [0.13.0] - 2026-09-27
 
 ### Added
