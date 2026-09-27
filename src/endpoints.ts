@@ -26,6 +26,13 @@ export interface KiroEndpoints {
   runtime: string;
 }
 
+/**
+ * Region Kiro issues API keys against. `ListAvailableProfiles` answers 403
+ * "Unsupported token type" for a `ksk_` key in every region, so an API key's
+ * profile — and therefore its model catalog and usage — is only reachable here.
+ */
+export const API_KEY_REGION = "us-east-1";
+
 export function resolveApiRegion(ssoRegion: string | undefined): string {
   if (!ssoRegion) return "us-east-1";
   return API_REGION_MAP[ssoRegion] ?? ssoRegion;

@@ -9,7 +9,7 @@
 
 import type { OAuthCredentials, OAuthLoginCallbacks } from "@earendil-works/pi-ai";
 import { formatSafeError } from "./debug.js";
-import { resolveApiRegion } from "./endpoints.js";
+import { API_KEY_REGION, resolveApiRegion } from "./endpoints.js";
 import { getKiroIdeCredentials, getKiroIdeCredentialsAllowExpired } from "./kiro-ide.js";
 import { interactiveLogin, loginViaKiroCli } from "./login.js";
 
@@ -71,8 +71,7 @@ export async function loginKiroWithApiKey(callbacks: OAuthLoginCallbacks, apiKey
   (callbacks as unknown as { onProgress?: (msg: string) => void }).onProgress?.("Validating API key...");
 
   const { resolveApiRegion } = await import("./endpoints.js");
-  // API keys are issued for the us-east-1 control plane.
-  const region = "us-east-1";
+  const region = API_KEY_REGION;
   const apiRegion = resolveApiRegion(region);
   const managementUrl = `https://management.${apiRegion}.kiro.dev/`;
 

@@ -3,20 +3,13 @@
 
 import { createHash } from "node:crypto";
 import { debugLog, redactSensitiveText } from "./debug.js";
-import { getKiroEndpoints } from "./endpoints.js";
+import { API_KEY_REGION, getKiroEndpoints } from "./endpoints.js";
 import { isApiKey, kiroAuthHeaders, kiroUserAgent } from "./oauth.js";
 import { kiroTokenTypeHeaders } from "./token-type.js";
 
 const LIST_PROFILES_PATH = "List-Available-Profiles";
 const LIST_MODELS_PATH = "List-Available-Models";
 const GET_PROFILE_TARGET = "AmazonCodeWhispererService.GetProfile";
-
-/**
- * Region Kiro issues API keys against. `ListAvailableProfiles` answers 403
- * "Unsupported token type" for a `ksk_` key in every region, so an API key's
- * profile — and therefore its model catalog — is only reachable here.
- */
-const API_KEY_REGION = "us-east-1";
 
 export interface KiroManagementAuth {
   accessToken: string;
